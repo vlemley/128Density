@@ -9,7 +9,7 @@ ANMcount <- st_read(file.choose())
 ggplot(data = ANMcount) + geom_sf()
 
 #reading in ANMmap shp
-ANMmap <- st_read('/Users/violetlemley/Documents/LSS/128/QGIS/ANMbeachShapefile/Ano Nuevo Map.shp')
+ANMmap <- st_read('/Users/violetlemley/Documents/128/QGIS/ANMbeachShapefile/Ano Nuevo Map.shp')
 
 #displaying ANMmap (TBD)
 ggplot(data = ANMmap) +
