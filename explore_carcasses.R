@@ -33,7 +33,7 @@ DensityDS <- DensityDS %>% select(-fid)
 DensityDS <- DensityDS %>% rename(number_individuals_alive = number_individuals)
 
 #getting number of dead individuals, merging APGW and APGw into one location
-df_counts <- carcassdata %>%
+carcasscount <- carcassdata %>%
   mutate(area = case_when(
     area == "APGW" ~ "APGw",
     TRUE ~ area
@@ -43,7 +43,7 @@ df_counts <- carcassdata %>%
 
 #joining tables, keeping all locations even if no density match
 combined <- DensityDS %>%
-  full_join(df_counts, by = c("beach_location" = "area"))
+  full_join(carcasscount, by = c("beach_location" = "area"))
 
 #replace Na in number_individuals_dead with 0
 combined$number_individuals_dead[is.na(combined$number_individuals_dead)] <- 0
@@ -142,6 +142,5 @@ summary(model)
 
 #summary stats for combined location Density vs MR
 combinedlocationmodel <- lm(density ~ mortality_rate, data = combinedlocation)
-summary(model)
-
+summary(combinedlocationmodel)
 
