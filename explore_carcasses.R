@@ -82,7 +82,7 @@ combinedlocation <- combined %>%
     beach_location %in% c("BBSL", "BBSU","")              ~ "Bight Beach South",
     beach_location %in% c("AP", "APG","APGw")              ~ "Ano Point",
     beach_location %in% c("SBW", "SBE", "SBW water")              ~ "South Beach",
-    beach_location %in% c("TSW", "TSC", "TSD", "TSE","Tar sands")              ~ "Tar Sands Beach",
+    beach_location %in% c("TSW", "TSC", "TSD", "TSE","Tar sands","TSB")              ~ "Tar Sands Beach",
     beach_location %in% c("FSB")              ~ "Fault Slip Beach",
     TRUE                                    ~ beach_location  # keeps anything not listed as-is
   ))
@@ -144,3 +144,39 @@ summary(model)
 combinedlocationmodel <- lm(density ~ mortality_rate, data = combinedlocation)
 summary(combinedlocationmodel)
 
+#cleaning up visually
+
+
+install.packages("ggrepel")
+
+library(ggrepel)
+
+combinedlocation %>%
+  filter(!is.na(density) & !is.na(mortality_rate)) %>%
+  filter(density > 0 & mortality_rate > 0) %>%
+  ggplot(aes(x = density, y = mortality_rate, label = combinedlocation)) +
+  geom_smooth(method = "lm", se = TRUE, color = "firebrick", fill = "grey90") +
+  geom_point(size = 4, color = "steelblue4") +
+  geom_text_repel(
+    size = 3.5,
+    fontface = "italic",
+    box.padding = 0.5,
+    point.padding = 0.3,
+    segment.color = "grey50",
+    segment.size = 0.3,
+    max.overlaps = Inf
+  ) +
+  labs(
+    title = "Seal Density and Mortality Rate by Beach Region",
+    x = expression("Seal Density" ~ (individuals/m^2)),
+    y = "Mortality Rate (carcasses/pre-outbreak count)",
+    caption = "Linear model with 95% confidence interval shown"
+  ) +
+  theme_classic() +
+  theme(
+    plot.title = element_text(size = 13, face = "bold"),
+    plot.caption = element_text(size = 8, color = "grey40"),
+    axis.title = element_text(size = 11),
+    axis.text = element_text(size = 10),
+    panel.grid.major = element_line(color = "grey95")
+  )
