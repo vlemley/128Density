@@ -80,7 +80,7 @@ combinedlocation <- combined %>%
     beach_location %in% c("MBBL", "MBBU", "Mid Bight NS")              ~ "Mid Bight Beach",
     beach_location %in% c("BMB", "BMNN", "BMD","BMC", "BMS","BMD", "BMN")              ~ "Big Midden Beach",
     beach_location %in% c("BBSL", "BBSU","")              ~ "Bight Beach South",
-    beach_location %in% c("AP", "APG","APGw")              ~ "Ano Point",
+    beach_location %in% c("AP", "APG","APGw")              ~ "Año Point",
     beach_location %in% c("SBW", "SBE", "SBW water")              ~ "South Beach",
     beach_location %in% c("TSW", "TSC", "TSD", "TSE","Tar sands","TSB")              ~ "Tar Sands Beach",
     beach_location %in% c("FSB")              ~ "Fault Slip Beach",
@@ -106,35 +106,6 @@ combinedlocation <- combinedlocation %>%
 
 view(combinedlocation)
 
-#scatterplot density vs mortality rate with combined (emiting NA)
-combined %>%
-  filter(!is.na(density) & !is.na(mortality_rate)) %>%
-  ggplot(aes(x = density, y = mortality_rate, label=beach_location)) +
-  geom_point(size = 3, color = "steelblue") +
-  geom_text(nudge_y = 0.02, size = 3) +
-  geom_smooth(method = "lm", se = TRUE, color = "firebrick") +
-  labs(
-    title = "Relationship Between Density and Mortality Rate 02-21-2026",
-    x = "Seal Density (individuals/sqm)",
-    y = "Mortality Rate (dead/alive)",
-  ) +
-  theme_minimal()
-
-#scatterplot density vs mortality rate with combined locations (regional)
-
-combinedlocation %>%
-  filter(!is.na(density) & !is.na(mortality_rate)) %>%
-  ggplot(aes(x = density, y = mortality_rate, label=combinedlocation)) +
-  geom_point(size = 3, color = "steelblue") +
-  geom_text(nudge_y = 0.02, size = 3) +
-  geom_smooth(method = "lm", se = TRUE, color = "firebrick") +
-  labs(
-    title = "Relationship Between Density and Mortality Rate 02-21-2026",
-    x = "Seal Density (individuals/sqm)",
-    y = "Mortality Rate (dead/alive)",
-  ) +
-  theme_minimal()
-
 
 #summary stats for combined Density vs MR (not stat sig)
 model <- lm(density ~ mortality_rate, data = combined)
@@ -144,24 +115,24 @@ summary(model)
 combinedlocationmodel <- lm(density ~ mortality_rate, data = combinedlocation)
 summary(combinedlocationmodel)
 
-#cleaning up visually
+#scatterplot density vs mortality rate with combined (emiting NA)
 
 
 install.packages("ggrepel")
 
 library(ggrepel)
 
-combinedlocation %>%
+my_plot <- combinedlocation %>%
   filter(!is.na(density) & !is.na(mortality_rate)) %>%
   filter(density > 0 & mortality_rate > 0) %>%
   ggplot(aes(x = density, y = mortality_rate, label = combinedlocation)) +
-  geom_smooth(method = "lm", se = TRUE, color = "firebrick", fill = "grey90") +
+  geom_smooth(method = "lm", se = TRUE, color = "firebrick", fill = "grey85") +
   geom_point(size = 4, color = "steelblue4") +
   geom_text_repel(
     size = 3.5,
     fontface = "italic",
-    box.padding = 0.5,
-    point.padding = 0.3,
+    box.padding = 1,
+    point.padding = 0.1,
     segment.color = "grey50",
     segment.size = 0.3,
     max.overlaps = Inf
@@ -169,7 +140,7 @@ combinedlocation %>%
   labs(
     title = "Seal Density and Mortality Rate by Beach Region",
     x = expression("Seal Density" ~ (individuals/m^2)),
-    y = "Mortality Rate (carcasses/pre-outbreak count)",
+    y = "Mortality Rate\n(carcasses/pre-outbreak count)",
     caption = "Linear model with 95% confidence interval shown"
   ) +
   theme_classic() +
@@ -180,3 +151,9 @@ combinedlocation %>%
     axis.text = element_text(size = 10),
     panel.grid.major = element_line(color = "grey95")
   )
+
+ggsave("density_mortality_plot.png",
+       plot = my_plot,
+       width = dev.size("in")[1],
+       height = dev.size("in")[2],
+       dpi = 300)
