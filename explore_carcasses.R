@@ -138,7 +138,7 @@ my_plot <- combinedlocation %>%
     max.overlaps = Inf
   ) +
   labs(
-    title = "Seal Density and Mortality Rate by Beach Region",
+    title = "Elephant Seal Density and Mortality Rate by Beach Region",
     x = expression("Seal Density" ~ (individuals/m^2)),
     y = "Mortality Rate\n(carcasses/pre-outbreak count)",
     caption = "Linear model with 95% confidence interval shown"
@@ -157,3 +157,5 @@ ggsave("density_mortality_plot.png",
        width = dev.size("in")[1],
        height = dev.size("in")[2],
        dpi = 300)
+
+my_plot
