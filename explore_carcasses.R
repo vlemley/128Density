@@ -1,9 +1,13 @@
+install.packages("tidyverse")
+install.packages("dplyr")
 library(tidyverse)
 library(dplyr)
 
+#reading in carcass data
 carcassdata<- read_csv("ML_all_carcasses_2026_April23.csv",
                quote = '"')
 
+#previewing carcass data
 glimpse(carcassdata)
 carcassdata |> 
   count(area, sort = TRUE) |> 
@@ -24,8 +28,6 @@ X20210221SegementAreaCount <- read_csv("20210221SegementAreaCount.csv")
 #adding in density column=individuals/area
 DensityDS <- X20210221SegementAreaCount %>%
   mutate(density = NUMPOINTS / area_sqm)
-
-view(DensityDS)
 
 #renaming and modifing existing columns
 DensityDS <- DensityDS %>% rename(number_individuals = NUMPOINTS, beach_location = Beach)
@@ -70,79 +72,35 @@ combined$number_individuals_dead[combined$beach_location == "MBBL"] <- combined$
 #remove SBW water and Tar sands
 combined <- combined[-c(39,40,37), ]
 
-#grouping locations together to see if there is a larger scale trend
-unique(combined$beach_location)
-
-combinedlocation <- combined %>%
-  mutate(combinedlocation = case_when(
-    beach_location %in% c("NP", "NPC", "NP0", "NP1", "NP2", "NP3", "NP4", "NP5", "NPG0", "NPGa", "NPG1", "NPG4", "NPD")          ~ "North Point",
-    beach_location %in% c("BBN", "BBNS", "BBNN")    ~ "Bight Beach North",
-    beach_location %in% c("MBBL", "MBBU", "Mid Bight NS")              ~ "Mid Bight Beach",
-    beach_location %in% c("BMB", "BMNN", "BMD","BMC", "BMS","BMD", "BMN")              ~ "Big Midden Beach",
-    beach_location %in% c("BBSL", "BBSU","")              ~ "Bight Beach South",
-    beach_location %in% c("AP", "APG","APGw")              ~ "Año Point",
-    beach_location %in% c("SBW", "SBE", "SBW water")              ~ "South Beach",
-    beach_location %in% c("TSW", "TSC", "TSD", "TSE","Tar sands","TSB")              ~ "Tar Sands Beach",
-    beach_location %in% c("FSB")              ~ "Fault Slip Beach",
-    TRUE                                    ~ beach_location  # keeps anything not listed as-is
-  ))
-
-#combining data for respective location groups
-
-combinedlocation <- combinedlocation %>%
-  group_by(combinedlocation) %>%
-  summarise(
-    number_individuals_dead = sum(number_individuals_dead),
-    number_individuals_alive = sum(number_individuals_alive),
-    area_sqm = sum(area_sqm),
-    mortality_rate = number_individuals_dead / number_individuals_alive,
-    density = number_individuals_dead / area_sqm
-  )
-
-#making Nan and inf=0 so density and mortality calcs can go through
-combinedlocation <- combinedlocation %>%
-  mutate(across(everything(), ~ifelse(is.nan(.), 0, .)))%>%
-  mutate(across(everything(),~ifelse(is.infinite(.), 0, .)))
-
-view(combinedlocation)
-
+#initial graph emiting NA
+combinedplot <- combined %>%
+  filter(!is.na(density) & !is.na(mortality_rate)) %>%
+  filter(density > 0 & mortality_rate > 0) %>%
+  ggplot(aes(x = density, y = mortality_rate, label = beach_location)) +
+  geom_smooth(method = "lm") +
+  geom_point() 
+combinedplot
 
 #summary stats for combined Density vs MR (not stat sig)
 model <- lm(density ~ mortality_rate, data = combined)
 summary(model)
 
-#summary stats for combined location Density vs MR
-combinedlocationmodel <- lm(density ~ mortality_rate, data = combinedlocation)
-summary(combinedlocationmodel)
+##testing for non-linear relationship 
+#Kendall's Tau correlation test
+cor.test(combined$density, combined$mortality_rate, method = "kendall")
 
-#scatterplot density vs mortality rate with combined (emiting NA)
-
-
-install.packages("ggrepel")
-
-library(ggrepel)
-
-my_plot <- combinedlocation %>%
+#plotting with LOESS and linear
+KTplot <- combined %>%
   filter(!is.na(density) & !is.na(mortality_rate)) %>%
-  filter(density > 0 & mortality_rate > 0) %>%
-  ggplot(aes(x = density, y = mortality_rate, label = combinedlocation)) +
-  geom_smooth(method = "lm", se = TRUE, color = "firebrick", fill = "grey85") +
-  geom_point(size = 4, color = "steelblue4") +
-  geom_text_repel(
-    size = 3.5,
-    fontface = "italic",
-    box.padding = 1,
-    point.padding = 0.1,
-    segment.color = "grey50",
-    segment.size = 0.3,
-    max.overlaps = Inf
-  ) +
+  ggplot(aes(x = density, y = mortality_rate)) +   # close aes() AND ggplot() here
+  geom_point(color = "#0072B2") +                                      # blue
+  geom_smooth(method = "loess", color = "#D55E00") +                   # orange
+  geom_smooth(method = "lm", color = "#3D3D3D", linetype = "dashed") + # vermillion
   labs(
     title = "Elephant Seal Density and Mortality Rate by Beach Region",
-    x = expression("Seal Density" ~ (individuals/m^2)),
-    y = "Mortality Rate\n(carcasses/pre-outbreak count)",
-    caption = "Linear model with 95% confidence interval shown"
-  ) +
+    y = "Mortality Rate (# dead / # alive)",
+    x = expression("# alive / m"^2)
+    )+
   theme_classic() +
   theme(
     plot.title = element_text(size = 13, face = "bold"),
@@ -151,11 +109,8 @@ my_plot <- combinedlocation %>%
     axis.text = element_text(size = 10),
     panel.grid.major = element_line(color = "grey95")
   )
+KTplot
 
-ggsave("density_mortality_plot.png",
-       plot = my_plot,
-       width = dev.size("in")[1],
-       height = dev.size("in")[2],
-       dpi = 300)
 
-my_plot
+
+
